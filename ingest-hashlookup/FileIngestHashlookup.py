@@ -126,13 +126,13 @@ class HashlookupFileIngestModule(FileIngestModule):
             (file.isFile() == False)):
             return IngestModule.ProcessResult.OK
 
-        # TODO: check other hashes if needed
-        sha1 = file.getSha1Hash()
-        if not sha1:
-            self.log(Level.WARNING, "File has no SHA1 hash: " + file.getName())
+        # TODO: check other hashes if possible
+        md5 = file.getMd5Hash()
+        if not md5:
+            self.log(Level.WARNING, "File has no MD5 hash: " + file.getName())
             return IngestModule.ProcessResult.OK
 
-        results = self.lookupSHA1Hash(sha1)
+        results = self.lookupMD5Hash(md5)
         # no information
         if not results:
             return IngestModule.ProcessResult.OK
@@ -195,13 +195,13 @@ class HashlookupFileIngestModule(FileIngestModule):
                 str(self.filesFound) + " files found")
         ingestServices = IngestServices.getInstance().postMessage(message)
 
-    def lookupSHA1Hash(self, sha1Hash):
-        if not self._hash_exists(sha1Hash):
+    def lookupMD5Hash(self, md5Hash):
+        if not self._hash_exists(md5Hash):
             return None
         else:
             # Query the Hashlookup API for detailed information
             try:
-                url = "https://hashlookup.circl.lu/lookup/sha1/" + sha1Hash.lower()
+                url = "https://hashlookup.circl.lu/lookup/md5/" + md5Hash.lower()
                 request = Request(url)
                 request.add_header('User-Agent', 'Autopsy-Hashlookup-Plugin/1.0')
 
@@ -209,7 +209,7 @@ class HashlookupFileIngestModule(FileIngestModule):
                 data = response.read()
 
                 result = json.loads(data)
-                self.log(Level.INFO, "Retrieved details for hash: " + sha1Hash)
+                self.log(Level.INFO, "Retrieved details for hash: " + md5Hash)
                 return result
 
             except HTTPError as e:
@@ -222,16 +222,16 @@ class HashlookupFileIngestModule(FileIngestModule):
                 self.log(Level.ERROR, "Error querying Hashlookup API: " + str(e))
                 return None
 
-    def _hash_exists(self, sha1Hash):
+    def _hash_exists(self, md5Hash):
         try:
-            dnsQuery = sha1Hash.lower() + ".dns.hashlookup.circl.lu"
+            dnsQuery = md5Hash.lower() + ".dns.hashlookup.circl.lu"
             socket.gethostbyname(dnsQuery)
-            self.log(Level.DEBUG, "Hash found in Hashlookup DNS: " + sha1Hash)
+            self.log(Level.DEBUG, "Hash found in Hashlookup DNS: " + md5Hash)
             return True
 
         except socket.gaierror:
             # DNS lookup failed - hash not found
-            self.log(Level.DEBUG, "Hash not found in Hashlookup DNS: " + sha1Hash)
+            self.log(Level.DEBUG, "Hash not found in Hashlookup DNS: " + md5Hash)
             return False
         except Exception as e:
             self.log(Level.WARNING, "Error performing DNS lookup: " + str(e))
