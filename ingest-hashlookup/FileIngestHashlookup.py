@@ -183,7 +183,7 @@ class HashlookupFileIngestModule(FileIngestModule):
                   HashlookupFileIngestModuleFactory.moduleName, comment)
         )
 
-        art = file.newAnalysisResult(BlackboardArtifact.Type.TSK_INTERESTING_FILE_HIT, score,
+        art = file.newAnalysisResult(BlackboardArtifact.Type.TSK_HASHSET_HIT, score,
                                         None, set_name, None, attrs).getAnalysisResult()
 
         try:
