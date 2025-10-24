@@ -148,7 +148,7 @@ class HashlookupFileIngestModule(FileIngestModule):
         hashlookup_trust = results.get("hashlookup:trust", 50)
         score = Score.SCORE_UNKNOWN
         set_name = "Hashlookup:Unknown trust"
-        if hashlookup_trust < 20:
+        if hashlookup_trust <= 30:
             score = Score.SCORE_NOTABLE
             set_name = "Hashlookup:Untrusted"
         elif hashlookup_trust < 50:
