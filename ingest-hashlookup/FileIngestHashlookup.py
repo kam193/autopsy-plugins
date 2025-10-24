@@ -42,7 +42,7 @@ try:
 except ImportError:
     from urllib.request import urlopen, Request
     from urllib.error import URLError, HTTPError
-from javax.naming import Context
+from javax.naming import Context, NamingException
 from javax.naming.directory import InitialDirContext, Attribute
 from java.util import Hashtable
 from java.lang import System
@@ -67,6 +67,7 @@ from org.sleuthkit.autopsy.casemodule import Case
 from org.sleuthkit.autopsy.casemodule.services import Services
 from org.sleuthkit.autopsy.casemodule.services import FileManager
 from org.sleuthkit.autopsy.casemodule.services import Blackboard
+from java.security import MessageDigest
 from java.util import Arrays
 
 # Factory that defines the name and details of the module and allows Autopsy
@@ -126,11 +127,13 @@ class HashlookupFileIngestModule(FileIngestModule):
         # Skip non-files
         if ((file.getType() == TskData.TSK_DB_FILES_TYPE_ENUM.UNALLOC_BLOCKS) or
             (file.getType() == TskData.TSK_DB_FILES_TYPE_ENUM.UNUSED_BLOCKS) or
-            (file.isFile() == False)):
+            (file.isFile() == False) or
+            (file.getSize() == 0)
+            ):
             return IngestModule.ProcessResult.OK
 
         # TODO: check other hashes if possible
-        md5 = file.getMd5Hash()
+        md5 = file.getMd5Hash() or self._calculateMD5(file)
         if not md5:
             self.log(Level.WARNING, "File has no MD5 hash: " + file.getName())
             return IngestModule.ProcessResult.OK
@@ -247,8 +250,39 @@ class HashlookupFileIngestModule(FileIngestModule):
             else:
                 self.log(Level.FINE, "Hash not found in Hashlookup DNS: " + md5Hash)
                 return False
-
+        # explicitly catch java exceptions
+        except NamingException as e:
+            self.log(Level.FINE, "Hash not found in Cymru Malware Hash DNS: " + md5Hash + " (DNS error: " + str(e.getMessage()) + ")")
+            return None
         except Exception as e:
             # DNS lookup failed - hash not found or DNS error
             self.log(Level.FINE, "Hash not found in Hashlookup DNS: " + md5Hash)
             return False
+
+    def _calculateMD5(self, file):
+        try:
+            md5 = MessageDigest.getInstance("MD5")
+            inputStream = ReadContentInputStream(file)
+            buffer = jarray.zeros(8192, "b")  # 8KB buffer
+            bytesRead = inputStream.read(buffer)
+
+            while bytesRead != -1:
+                md5.update(buffer, 0, bytesRead)
+                bytesRead = inputStream.read(buffer)
+
+            inputStream.close()
+
+            hashBytes = md5.digest()
+            hexString = ""
+            for b in hashBytes:
+                hexString += "%02x" % (b & 0xff)
+
+            self.log(Level.INFO, "Calculated MD5: " + hexString + " for file: " + file.getName())
+
+            # TODO
+            # file.setMd5Hash(hexString)
+            return hexString
+
+        except Exception as e:
+            self.log(Level.SEVERE, "Error calculating MD5 hash: " + str(e))
+            return None
