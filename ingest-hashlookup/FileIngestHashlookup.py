@@ -169,6 +169,10 @@ class HashlookupFileIngestModule(FileIngestModule):
             comment += ", Source: " + results.get("source")
         if "hashlookup:parent-total" in results:
             comment += ", Parent Total: " + str(results.get("hashlookup:parent-total"))
+        if "KnownMalicious" in results:
+            comment += ", KnownMalicious: " + str(results.get("KnownMalicious"))
+        if "ProductCode" in results:
+            comment += ", ProductCode: \n" + json.dumps(results.get("ProductCode"))
         if "parents" in results and len(results.get("parents")) > 0:
             comment += ", first Parent: \n" + json.dumps(results.get("parents")[0])
 
