@@ -102,7 +102,7 @@ class HashlookupFileIngestModule(FileIngestModule):
     _logger = Logger.getLogger(HashlookupFileIngestModuleFactory.moduleName)
 
     def log(self, level, msg):
-        self._logger.logp(level, self.__class__.__name__, inspect.stack()[1][3], msg)
+        self._logger.logp(level, self.__class__.__name__, None, msg)
 
     def __init__(self):
         self.context = None
@@ -219,7 +219,7 @@ class HashlookupFileIngestModule(FileIngestModule):
                 data = response.read()
 
                 result = json.loads(data)
-                self.log(Level.INFO, "Retrieved details for hash: " + md5Hash)
+                self.log(Level.FINE, "Retrieved details for hash: " + md5Hash)
                 return result
 
             except HTTPError as e:
@@ -277,7 +277,7 @@ class HashlookupFileIngestModule(FileIngestModule):
             for b in hashBytes:
                 hexString += "%02x" % (b & 0xff)
 
-            self.log(Level.INFO, "Calculated MD5: " + hexString + " for file: " + file.getName())
+            self.log(Level.FINE, "Calculated MD5: " + hexString + " for file: " + file.getName())
 
             # TODO
             # file.setMd5Hash(hexString)
