@@ -42,6 +42,9 @@ try:
 except ImportError:
     from urllib.request import urlopen, Request
     from urllib.error import URLError, HTTPError
+from javax.naming import Context
+from javax.naming.directory import InitialDirContext, Attribute
+from java.util import Hashtable
 from java.lang import System
 from java.util.logging import Level
 from org.sleuthkit.datamodel import Score
@@ -225,14 +228,23 @@ class HashlookupFileIngestModule(FileIngestModule):
     def _hash_exists(self, md5Hash):
         try:
             dnsQuery = md5Hash.lower() + ".dns.hashlookup.circl.lu"
-            socket.gethostbyname(dnsQuery)
-            self.log(Level.FINE, "Hash found in Hashlookup DNS: " + md5Hash)
-            return True
 
-        except socket.gaierror:
-            # DNS lookup failed - hash not found
-            self.log(Level.FINE, "Hash not found in Hashlookup DNS: " + md5Hash)
-            return False
+            # Use Java's JNDI API to query DNS TXT records
+            env = Hashtable()
+            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.dns.DnsContextFactory")
+
+            ctx = InitialDirContext(env)
+            attrs = ctx.getAttributes(dnsQuery, ["TXT"])
+            txtAttr = attrs.get("TXT")
+
+            if txtAttr is not None and txtAttr.size() > 0:
+                self.log(Level.FINE, "Hash found in Hashlookup DNS: " + md5Hash)
+                return True
+            else:
+                self.log(Level.FINE, "Hash not found in Hashlookup DNS: " + md5Hash)
+                return False
+
         except Exception as e:
-            self.log(Level.WARNING, "Error performing DNS lookup: " + str(e))
+            # DNS lookup failed - hash not found or DNS error
+            self.log(Level.FINE, "Hash not found in Hashlookup DNS: " + md5Hash)
             return False
