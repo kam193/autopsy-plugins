@@ -219,19 +219,19 @@ class HashlookupFileIngestModule(FileIngestModule):
                 self.log(Level.WARNING, "Network error querying Hashlookup API: " + str(e.reason))
                 return None
             except Exception as e:
-                self.log(Level.ERROR, "Error querying Hashlookup API: " + str(e))
+                self.log(Level.SEVERE, "Error querying Hashlookup API: " + str(e))
                 return None
 
     def _hash_exists(self, md5Hash):
         try:
             dnsQuery = md5Hash.lower() + ".dns.hashlookup.circl.lu"
             socket.gethostbyname(dnsQuery)
-            self.log(Level.DEBUG, "Hash found in Hashlookup DNS: " + md5Hash)
+            self.log(Level.FINE, "Hash found in Hashlookup DNS: " + md5Hash)
             return True
 
         except socket.gaierror:
             # DNS lookup failed - hash not found
-            self.log(Level.DEBUG, "Hash not found in Hashlookup DNS: " + md5Hash)
+            self.log(Level.FINE, "Hash not found in Hashlookup DNS: " + md5Hash)
             return False
         except Exception as e:
             self.log(Level.WARNING, "Error performing DNS lookup: " + str(e))
