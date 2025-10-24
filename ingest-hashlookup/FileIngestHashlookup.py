@@ -157,10 +157,11 @@ class HashlookupFileIngestModule(FileIngestModule):
         elif hashlookup_trust < 50:
             score = Score.SCORE_LIKELY_NOTABLE
             set_name = "Hashlookup:Likely Untrusted"
-        elif hashlookup_trust > 90:
+        elif hashlookup_trust > 80:
             score = Score.SCORE_NONE
             set_name = "Hashlookup:Trusted"
-        elif hashlookup_trust > 65:
+        elif hashlookup_trust >= 50:
+            # 50 are e.g. some Windows system files
             score = Score.SCORE_LIKELY_NONE
             set_name = "Hashlookup:Likely Trusted"
 
